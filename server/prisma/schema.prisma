@@ -1,0 +1,307 @@
+// ============================================================================
+// Prisma Schema — Shop Management System
+// ----------------------------------------------------------------------------
+// A normalized relational design for a retail shop with automatic inventory
+// and profit tracking. Money is stored as Decimal(12,2) to avoid float errors.
+//
+// Core inventory rule:
+//   - PURCHASES increase Product.stock and refresh Product.costPrice.
+//   - SALES decrease Product.stock and snapshot the cost price into the line
+//     item so historical profit stays correct even if cost changes later.
+//   - Every stock change is recorded in StockMovement for a full audit trail.
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------------
+// Authentication & Users
+// ----------------------------------------------------------------------------
+
+enum Role {
+  ADMIN
+  MANAGER
+  CASHIER
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String // bcrypt hash — never returned by the API
+  role      Role     @default(ADMIN)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Audit relations: who created each transaction
+  purchaseInvoices PurchaseInvoice[]
+  salesInvoices    SalesInvoice[]
+  expenses         Expense[]
+  stockMovements   StockMovement[]
+
+  @@index([email])
+  @@map("users")
+}
+
+// ----------------------------------------------------------------------------
+// Products & Categories
+// ----------------------------------------------------------------------------
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+
+  @@index([name])
+  @@map("categories")
+}
+
+model Product {
+  id           String  @id @default(uuid())
+  name         String
+  sku          String  @unique // internal stock keeping unit
+  barcode      String? @unique
+  imageUrl     String?
+  description  String?
+
+  // Money
+  costPrice    Decimal @default(0) @db.Decimal(12, 2) // latest purchase cost
+  sellingPrice Decimal @default(0) @db.Decimal(12, 2) // default retail price
+
+  // Inventory
+  stock        Int     @default(0)
+  lowStockAt   Int     @default(10) // threshold for low-stock alerts
+  unit         String  @default("pcs") // pcs, kg, litre, box...
+  isActive     Boolean @default(true)
+
+  categoryId   String?
+  category     Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  purchaseItems PurchaseItem[]
+  salesItems    SalesItem[]
+  stockMovements StockMovement[]
+
+  @@index([name])
+  @@index([sku])
+  @@index([barcode])
+  @@index([categoryId])
+  @@map("products")
+}
+
+// ----------------------------------------------------------------------------
+// Suppliers & Customers (contacts)
+// ----------------------------------------------------------------------------
+
+model Supplier {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purchaseInvoices PurchaseInvoice[]
+
+  @@index([name])
+  @@map("suppliers")
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  salesInvoices SalesInvoice[]
+
+  @@index([name])
+  @@map("customers")
+}
+
+// ----------------------------------------------------------------------------
+// Purchases (stock IN)
+// ----------------------------------------------------------------------------
+
+enum PaymentStatus {
+  PAID
+  PARTIAL
+  UNPAID
+}
+
+model PurchaseInvoice {
+  id            String   @id @default(uuid())
+  invoiceNo     String   @unique // e.g. PUR-2026-000123
+  supplierId    String?
+  supplier      Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  userId        String?
+  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  subTotal      Decimal  @default(0) @db.Decimal(12, 2)
+  discount      Decimal  @default(0) @db.Decimal(12, 2)
+  tax           Decimal  @default(0) @db.Decimal(12, 2)
+  total         Decimal  @default(0) @db.Decimal(12, 2)
+  paidAmount    Decimal  @default(0) @db.Decimal(12, 2)
+  paymentStatus PaymentStatus @default(PAID)
+  note          String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  items         PurchaseItem[]
+
+  @@index([invoiceNo])
+  @@index([supplierId])
+  @@index([createdAt])
+  @@map("purchase_invoices")
+}
+
+model PurchaseItem {
+  id                String   @id @default(uuid())
+  purchaseInvoiceId String
+  purchaseInvoice   PurchaseInvoice @relation(fields: [purchaseInvoiceId], references: [id], onDelete: Cascade)
+  productId         String
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  quantity          Int
+  unitCost          Decimal  @db.Decimal(12, 2) // purchase cost per unit
+  lineTotal         Decimal  @db.Decimal(12, 2) // quantity * unitCost
+
+  @@index([purchaseInvoiceId])
+  @@index([productId])
+  @@map("purchase_items")
+}
+
+// ----------------------------------------------------------------------------
+// Sales (stock OUT) — profit computed from snapshotted cost
+// ----------------------------------------------------------------------------
+
+model SalesInvoice {
+  id            String   @id @default(uuid())
+  invoiceNo     String   @unique // e.g. SAL-2026-000123
+  customerId    String?
+  customer      Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  userId        String?
+  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  subTotal      Decimal  @default(0) @db.Decimal(12, 2)
+  discount      Decimal  @default(0) @db.Decimal(12, 2)
+  tax           Decimal  @default(0) @db.Decimal(12, 2)
+  total         Decimal  @default(0) @db.Decimal(12, 2)
+  paidAmount    Decimal  @default(0) @db.Decimal(12, 2)
+  paymentStatus PaymentStatus @default(PAID)
+
+  // Denormalized profit for fast dashboard reads (sum of item profits)
+  totalProfit   Decimal  @default(0) @db.Decimal(12, 2)
+  note          String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  items         SalesItem[]
+
+  @@index([invoiceNo])
+  @@index([customerId])
+  @@index([createdAt])
+  @@map("sales_invoices")
+}
+
+model SalesItem {
+  id             String   @id @default(uuid())
+  salesInvoiceId String
+  salesInvoice   SalesInvoice @relation(fields: [salesInvoiceId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  quantity       Int
+  unitPrice      Decimal  @db.Decimal(12, 2) // selling price per unit (manual)
+  costPrice      Decimal  @db.Decimal(12, 2) // SNAPSHOT of product cost at sale time
+  lineTotal      Decimal  @db.Decimal(12, 2) // quantity * unitPrice
+  lineProfit     Decimal  @db.Decimal(12, 2) // (unitPrice - costPrice) * quantity
+
+  @@index([salesInvoiceId])
+  @@index([productId])
+  @@map("sales_items")
+}
+
+// ----------------------------------------------------------------------------
+// Stock movement audit trail
+// ----------------------------------------------------------------------------
+
+enum MovementType {
+  PURCHASE
+  SALE
+  ADJUSTMENT
+}
+
+model StockMovement {
+  id          String   @id @default(uuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  type        MovementType
+  quantity    Int // signed: +in / -out
+  balance     Int // resulting stock after this movement
+  reference   String? // related invoice number
+  note        String?
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  @@index([productId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("stock_movements")
+}
+
+// ----------------------------------------------------------------------------
+// Expenses
+// ----------------------------------------------------------------------------
+
+model Expense {
+  id        String   @id @default(uuid())
+  title     String
+  category  String   @default("General") // Rent, Utilities, Salaries...
+  amount    Decimal  @db.Decimal(12, 2)
+  note      String?
+  spentAt   DateTime @default(now())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+
+  @@index([category])
+  @@index([spentAt])
+  @@map("expenses")
+}
+
+// ----------------------------------------------------------------------------
+// Settings (single-row key/value store for shop config)
+// ----------------------------------------------------------------------------
+
+model Setting {
+  id          String   @id @default(uuid())
+  shopName    String   @default("My Shop")
+  currency    String   @default("USD")
+  taxRate     Decimal  @default(0) @db.Decimal(5, 2) // percentage
+  address     String?
+  phone       String?
+  logoUrl     String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("settings")
+}
