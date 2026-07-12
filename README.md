@@ -2,7 +2,7 @@
 
 A full-stack, portfolio-quality **Shop Management System** with **automatic inventory** and **automatic profit tracking**. Purchases increase stock, sales decrease it, and profit is computed automatically from a snapshotted cost price — the operator never re-enters cost during a sale.
 
-> **Status:** Built module by module. This repository currently contains the **foundation** (monorepo scaffolding, full database schema, backend core, and frontend toolchain). Feature modules are added incrementally.
+> **Status:** ✅ Feature-complete. All modules are implemented end-to-end — authentication, dashboard, products, categories, purchases, sales, customers, suppliers, expenses, reports, and settings — with automatic inventory and profit.
 
 ---
 
@@ -97,16 +97,16 @@ Open <http://localhost:5173>.
 | #  | Module                                   | Status         |
 | -- | ---------------------------------------- | -------------- |
 | 0  | Foundation (scaffolding + schema)        | ✅ Done         |
-| 1  | Authentication (JWT)                      | ⬜ Next         |
-| 2  | Dashboard (KPIs + charts)                | ⬜ Planned      |
-| 3  | Product Management                       | ⬜ Planned      |
-| 4  | Purchases (auto stock increase)          | ⬜ Planned      |
-| 5  | Sales (auto stock decrease + profit)     | ⬜ Planned      |
-| 6  | Customers                                | ⬜ Planned      |
-| 7  | Suppliers                                | ⬜ Planned      |
-| 8  | Expenses                                 | ⬜ Planned      |
-| 9  | Reports                                  | ⬜ Planned      |
-| 10 | Settings                                 | ⬜ Planned      |
+| 1  | Authentication (JWT)                      | ✅ Done         |
+| 2  | Dashboard (KPIs + charts)                | ✅ Done         |
+| 3  | Product Management                       | ✅ Done         |
+| 4  | Purchases (auto stock increase)          | ✅ Done         |
+| 5  | Sales (auto stock decrease + profit)     | ✅ Done         |
+| 6  | Customers                                | ✅ Done         |
+| 7  | Suppliers                                | ✅ Done         |
+| 8  | Expenses                                 | ✅ Done         |
+| 9  | Reports                                  | ✅ Done         |
+| 10 | Settings                                 | ✅ Done         |
 
 ## 📄 License
 
