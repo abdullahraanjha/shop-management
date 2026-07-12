@@ -19,23 +19,63 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
 
 /* ── KPI stat card ──────────────────────────────────────────────────────── */
 export function StatCard({
-  label, value, icon, hint, tone = 'primary',
-}: { label: string; value: string; icon: ReactNode; hint?: string; tone?: 'primary' | 'green' | 'red' | 'blue' }) {
+  label, value, icon, hint, tone = 'primary', delta, hero,
+}: {
+  label: string;
+  value: string;
+  icon: ReactNode;
+  hint?: string;
+  tone?: 'primary' | 'green' | 'red' | 'blue' | 'amber';
+  /** e.g. "+12.5%" — rendered as a trend chip */
+  delta?: string;
+  /** gradient lead-metric variant */
+  hero?: boolean;
+}) {
   const tones = {
-    primary: 'text-primary bg-primary/10',
-    green: 'text-green-500 bg-green-500/10',
-    red: 'text-red-500 bg-red-500/10',
-    blue: 'text-blue-500 bg-blue-500/10',
+    primary: 'text-indigo-500 bg-indigo-500/10',
+    green: 'text-emerald-500 bg-emerald-500/10',
+    red: 'text-rose-500 bg-rose-500/10',
+    blue: 'text-sky-500 bg-sky-500/10',
+    amber: 'text-amber-500 bg-amber-500/10',
   };
+  const deltaUp = delta?.startsWith('+');
+
+  if (hero) {
+    return (
+      <Card className="hero-card p-5">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm font-medium text-white/75">{label}</p>
+            <p className="mt-1 text-3xl font-extrabold tracking-tight">{value}</p>
+            {hint && <p className="mt-1.5 text-xs text-white/70">{hint}</p>}
+          </div>
+          <div className="rounded-xl bg-white/15 p-2.5 backdrop-blur">{icon}</div>
+        </div>
+        {delta && (
+          <span className="mt-3 inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-xs font-semibold">
+            {delta} vs yesterday
+          </span>
+        )}
+      </Card>
+    );
+  }
+
   return (
-    <Card className="p-5">
+    <Card className="p-5 transition-shadow hover:shadow-md">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="mt-1 text-2xl font-bold">{value}</p>
-          {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+          <p className="text-[13px] font-medium text-muted-foreground">{label}</p>
+          <p className="mt-1 text-2xl font-bold tracking-tight">{value}</p>
+          <div className="mt-1.5 flex items-center gap-2">
+            {delta && (
+              <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${deltaUp ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                {delta}
+              </span>
+            )}
+            {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+          </div>
         </div>
-        <div className={`rounded-lg p-2.5 ${tones[tone]}`}>{icon}</div>
+        <div className={`rounded-xl p-2.5 ${tones[tone]}`}>{icon}</div>
       </div>
     </Card>
   );

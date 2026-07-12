@@ -6,11 +6,12 @@ type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 type Size = 'sm' | 'md' | 'icon';
 
 const variants: Record<Variant, string> = {
-  primary: 'bg-primary text-primary-foreground hover:opacity-90',
+  primary:
+    'bg-gradient-to-b from-indigo-500 to-indigo-600 text-white shadow-sm shadow-indigo-500/25 hover:from-indigo-400 hover:to-indigo-600 dark:from-indigo-500 dark:to-violet-600',
   secondary: 'bg-secondary text-secondary-foreground hover:opacity-80',
-  outline: 'border border-border bg-transparent hover:bg-accent',
+  outline: 'border border-border bg-card shadow-sm hover:bg-accent',
   ghost: 'bg-transparent hover:bg-accent',
-  danger: 'bg-destructive text-destructive-foreground hover:opacity-90',
+  danger: 'bg-destructive text-destructive-foreground shadow-sm hover:opacity-90',
 };
 const sizes: Record<Size, string> = {
   sm: 'h-8 px-3 text-xs',
@@ -25,7 +26,7 @@ export const Button = forwardRef<
   <button
     ref={ref}
     className={cn(
-      'inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+      'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98]',
       variants[variant],
       sizes[size],
       className,
@@ -87,7 +88,7 @@ export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLab
 /* ── Card ───────────────────────────────────────────────────────────────── */
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
   return (
-    <div className={cn('rounded-lg border border-border bg-card text-card-foreground shadow-sm', className)}>
+    <div className={cn('rounded-xl border border-border bg-card text-card-foreground shadow-sm', className)}>
       {children}
     </div>
   );
