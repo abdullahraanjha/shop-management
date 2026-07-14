@@ -5,6 +5,20 @@ A full-stack, portfolio-quality **Shop Management System** with **automatic inve
 > **Status:** ✅ Feature-complete. All modules are implemented end-to-end — authentication, dashboard, products, categories, purchases, sales, customers, suppliers, expenses, reports, and settings — with automatic inventory and profit.
 
 ---
+## 🌐 Live Demo
+
+🔗 **Live Website**
+
+https://shop-management-client-eta.vercel.app/
+
+---
+
+## 💻 Source Code
+
+🔗 GitHub Repository
+
+https://github.com/abdullahraanjha/shop-management
+
 
 ## ✨ Key Features
 
@@ -111,17 +125,4 @@ Open <http://localhost:5173>.
 ## 📄 License
 
 MIT — free to use for learning and portfolio purposes.
-## 🌐 Live Demo
-
-🔗 **Live Website**
-
-https://shop-management-client-eta.vercel.app/
-
----
-
-## 💻 Source Code
-
-🔗 GitHub Repository
-
-https://github.com/abdullahraanjha/shop-management
-
+<img width="1440" height="900" alt="v2products" src="https://github.com/user-attachments/assets/dfffd315-87dc-4621-9d27-99ae508fba06" />
