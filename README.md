@@ -111,3 +111,17 @@ Open <http://localhost:5173>.
 ## 📄 License
 
 MIT — free to use for learning and portfolio purposes.
+## 🌐 Live Demo
+
+🔗 **Live Website**
+
+https://shop-management-client-eta.vercel.app/
+
+---
+
+## 💻 Source Code
+
+🔗 GitHub Repository
+
+https://github.com/abdullahraanjha/shop-management
+
